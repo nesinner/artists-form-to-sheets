@@ -1,0 +1,5 @@
+streamlit
+sqlalchemy
+pillow
+python-dotenv
+pytest
