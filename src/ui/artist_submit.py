@@ -113,6 +113,20 @@ def reset_form_state():
 def render_artist_submit(session):
     st.header("Artist Submit")
 
+    if st.session_state.pop("reset_form_pending", False):
+        reset_form_state()
+
+    success_payload = st.session_state.pop("submission_success", None)
+    if success_payload:
+        status_params = {
+            "page": "Artist Status",
+            "token": success_payload["token"],
+        }
+        status_url = f"{APP_BASE_URL}?{urlencode(status_params)}"
+        st.success("Submission created.")
+        st.write(f"Submission ID: {success_payload['id']}")
+        st.write(f"Status URL: {status_url}")
+
     params = get_query_params()
     draft_token = get_query_value(params, "draft") or st.session_state.get(
         "draft_token"
@@ -308,8 +322,9 @@ def render_artist_submit(session):
     set_query_params({"last_token": submission.public_token})
 
     clear_draft(session, draft_token)
-    reset_form_state()
-
-    st.success("Submission created.")
-    st.write(f"Submission ID: {submission.id}")
-    st.write(f"Status URL: {status_url}")
+    st.session_state["submission_success"] = {
+        "id": submission.id,
+        "token": submission.public_token,
+    }
+    st.session_state["reset_form_pending"] = True
+    st.rerun()

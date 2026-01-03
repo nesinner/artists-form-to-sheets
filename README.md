@@ -33,6 +33,7 @@ DB_URL=sqlite:///data/app.db
 UPLOAD_DIR=data/uploads
 APP_BASE_URL=http://localhost:8501
 ```
+Or set the same keys in Streamlit Secrets (TOML).
 
 ## Run
 ```bash
