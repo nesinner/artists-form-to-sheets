@@ -43,14 +43,9 @@ def main():
             render_auth(session)
             return
 
-        pages = [
-            "Artist Submit",
-            "My Submissions",
-            "Artist Status",
-            "Admin Applications",
-            "Releases",
-            "Planned Catalog",
-        ]
+        pages = ["Artist Submit", "My Submissions", "Artist Status"]
+        if st.session_state.get("user_is_admin"):
+            pages.extend(["Admin Applications", "Releases", "Planned Catalog"])
         default_page = "Artist Status" if token_from_query else "Artist Submit"
         if page_from_query in pages:
             default_page = page_from_query

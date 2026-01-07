@@ -45,6 +45,9 @@ def export_submissions_csv(session):
                 "cover_option": submission.cover_option,
                 "cover_link": submission.cover_link,
                 "cover_file_path": submission.cover_file_path,
+                "cover_brief": submission.cover_brief,
+                "cover_reference_link": submission.cover_reference_link,
+                "cover_label_discretion": submission.cover_label_discretion,
                 "audio_link": submission.audio_link,
                 "audio_file_paths": submission.audio_file_paths,
                 "spotify_link": submission.spotify_link,
@@ -70,6 +73,9 @@ def export_submissions_csv(session):
         "cover_option",
         "cover_link",
         "cover_file_path",
+        "cover_brief",
+        "cover_reference_link",
+        "cover_label_discretion",
         "audio_link",
         "audio_file_paths",
         "spotify_link",
@@ -221,10 +227,19 @@ def render_admin_applications(session):
     st.write(f"Artists: {selected.artists_display}")
     st.write(f"Email: {selected.artist_email}")
     st.write(f"Cover option: {selected.cover_option}")
-    if selected.cover_link:
-        st.write(f"Cover link: {selected.cover_link}")
-    if selected.cover_file_path:
-        render_download(selected.cover_file_path, "Cover file", "cover_download")
+    if selected.cover_option == "LINK":
+        if selected.cover_link:
+            st.write(f"Cover link: {selected.cover_link}")
+        if selected.cover_file_path:
+            render_download(selected.cover_file_path, "Cover file", "cover_download")
+    else:
+        if selected.cover_brief:
+            st.write("Design brief:")
+            st.write(selected.cover_brief)
+        if selected.cover_reference_link:
+            st.write(f"Reference link: {selected.cover_reference_link}")
+        if selected.cover_label_discretion:
+            st.write("Reference: label discretion")
     if selected.audio_link:
         st.write(f"Audio link: {selected.audio_link}")
     if selected.audio_file_paths:

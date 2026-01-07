@@ -46,6 +46,9 @@ def initialize_form_state(draft_data):
         "artists_display": "",
         "cover_option": "LINK",
         "cover_link": "",
+        "cover_brief": "",
+        "cover_reference_link": "",
+        "cover_label_discretion": False,
         "audio_link": "",
         "spotify_link": "",
         "tiktok_link": "",
@@ -70,6 +73,9 @@ def collect_draft_payload():
         "artists_display": st.session_state.get("artists_display", ""),
         "cover_option": st.session_state.get("cover_option", "LINK"),
         "cover_link": st.session_state.get("cover_link", ""),
+        "cover_brief": st.session_state.get("cover_brief", ""),
+        "cover_reference_link": st.session_state.get("cover_reference_link", ""),
+        "cover_label_discretion": st.session_state.get("cover_label_discretion", False),
         "audio_link": st.session_state.get("audio_link", ""),
         "spotify_link": st.session_state.get("spotify_link", ""),
         "tiktok_link": st.session_state.get("tiktok_link", ""),
@@ -94,6 +100,9 @@ def reset_form_state():
             "artists_display": "",
             "cover_option": "LINK",
             "cover_link": "",
+            "cover_brief": "",
+            "cover_reference_link": "",
+            "cover_label_discretion": False,
             "audio_link": "",
             "spotify_link": "",
             "tiktok_link": "",
@@ -155,8 +164,16 @@ def render_artist_submit(session):
     st.subheader("Materials")
     st.selectbox("Cover option *", ["LINK", "LABEL_DESIGN"], key="cover_option")
     cover_link = ""
-    if st.session_state.get("cover_option") == "LINK":
+    cover_option = st.session_state.get("cover_option", "LINK")
+    if cover_option == "LINK":
         cover_link = st.text_input("Cover link *", key="cover_link")
+    else:
+        st.text_area("Design brief *", key="cover_brief")
+        st.text_input("Reference link (optional)", key="cover_reference_link")
+        st.checkbox(
+            "No references, leave to label",
+            key="cover_label_discretion",
+        )
     st.text_input("Audio link *", key="audio_link")
 
     st.subheader("Profiles")
@@ -230,6 +247,11 @@ def render_artist_submit(session):
     track_name = st.session_state.get("track_name", "").strip()
     artists_display = st.session_state.get("artists_display", "").strip()
     cover_option = st.session_state.get("cover_option", "LINK")
+    cover_brief = st.session_state.get("cover_brief", "").strip()
+    cover_reference_link = st.session_state.get("cover_reference_link", "").strip()
+    cover_label_discretion = bool(
+        st.session_state.get("cover_label_discretion", False)
+    )
     audio_link = st.session_state.get("audio_link", "").strip()
     spotify_link = st.session_state.get("spotify_link", "").strip()
     tiktok_link = st.session_state.get("tiktok_link", "").strip()
@@ -249,6 +271,15 @@ def render_artist_submit(session):
             errors.append("Cover link is required.")
         elif not is_http_url(cover_link):
             errors.append("Cover link must start with http:// or https://.")
+    else:
+        if not cover_brief:
+            errors.append("Design brief is required for label design.")
+        if cover_reference_link and not is_http_url(cover_reference_link):
+            errors.append("Reference link must start with http:// or https://.")
+        if not cover_reference_link and not cover_label_discretion:
+            errors.append(
+                "Provide a reference link or choose label discretion for label design."
+            )
     if not audio_link:
         errors.append("Audio link is required.")
     if audio_link and not is_http_url(audio_link):
@@ -296,6 +327,15 @@ def render_artist_submit(session):
         "cover_option": cover_option,
         "cover_link": cover_link.strip() if cover_option == "LINK" else None,
         "cover_file_path": None,
+        "cover_brief": cover_brief if cover_option == "LABEL_DESIGN" else None,
+        "cover_reference_link": (
+            cover_reference_link
+            if cover_option == "LABEL_DESIGN" and cover_reference_link
+            else None
+        ),
+        "cover_label_discretion": (
+            1 if cover_option == "LABEL_DESIGN" and cover_label_discretion else 0
+        ),
         "audio_link": audio_link,
         "audio_file_paths": None,
         "spotify_link": spotify_link,

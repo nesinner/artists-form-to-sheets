@@ -28,6 +28,16 @@ def ensure_sqlite_columns(engine):
         columns = {row[1] for row in result}
         if "user_id" not in columns:
             conn.exec_driver_sql("ALTER TABLE submissions ADD COLUMN user_id INTEGER")
+        if "cover_brief" not in columns:
+            conn.exec_driver_sql("ALTER TABLE submissions ADD COLUMN cover_brief TEXT")
+        if "cover_reference_link" not in columns:
+            conn.exec_driver_sql(
+                "ALTER TABLE submissions ADD COLUMN cover_reference_link TEXT"
+            )
+        if "cover_label_discretion" not in columns:
+            conn.exec_driver_sql(
+                "ALTER TABLE submissions ADD COLUMN cover_label_discretion INTEGER"
+            )
 
 
 @st.cache_resource
