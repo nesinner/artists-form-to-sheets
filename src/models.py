@@ -42,6 +42,7 @@ class Submission(Base):
     participants = relationship(
         "ArtistParticipant", back_populates="submission", cascade="all, delete-orphan"
     )
+    user = relationship("User", back_populates="submissions")
     release = relationship("Release", back_populates="submission", uselist=False)
 
 
@@ -56,6 +57,8 @@ class User(Base):
     is_admin = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=utcnow, nullable=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    submissions = relationship("Submission", back_populates="user")
 
 
 class Draft(Base):

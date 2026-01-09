@@ -4,6 +4,7 @@ import json
 
 import streamlit as st
 from sqlalchemy import func, or_
+from sqlalchemy.orm import selectinload
 
 from ..config import RELEASE_STATUSES, SUBMISSION_STATUSES
 from ..models import PlannedCatalog, Release, Submission, utcnow
@@ -23,7 +24,10 @@ def build_csv(rows, fieldnames):
 
 def export_submissions_csv(session):
     submissions = (
-        session.query(Submission).order_by(Submission.created_at.desc()).all()
+        session.query(Submission)
+        .options(selectinload(Submission.user))
+        .order_by(Submission.created_at.desc())
+        .all()
     )
     rows = []
     for submission in submissions:
@@ -41,6 +45,9 @@ def export_submissions_csv(session):
         rows.append(
             {
                 "id": submission.id,
+                "account_id": submission.user_id,
+                "account_email": submission.user.email if submission.user else "",
+                "account_display_name": submission.user.display_name if submission.user else "",
                 "track_name": submission.track_name,
                 "artists_display": submission.artists_display,
                 "cover_option": submission.cover_option,
@@ -69,6 +76,9 @@ def export_submissions_csv(session):
         )
     fieldnames = [
         "id",
+        "account_id",
+        "account_email",
+        "account_display_name",
         "track_name",
         "artists_display",
         "cover_option",
@@ -192,7 +202,11 @@ def render_admin_applications(session):
     status_filter = st.selectbox("Filter by status", ["All"] + SUBMISSION_STATUSES)
     search_query = st.text_input("Search by track, artists, or email")
 
-    query = session.query(Submission).order_by(Submission.created_at.desc())
+    query = (
+        session.query(Submission)
+        .options(selectinload(Submission.user))
+        .order_by(Submission.created_at.desc())
+    )
     if status_filter != "All":
         query = query.filter(Submission.status == status_filter)
     if search_query.strip():
@@ -210,6 +224,8 @@ def render_admin_applications(session):
         {
             "id": sub.id,
             "track_name": sub.track_name,
+            "account_id": sub.user_id,
+            "account_email": sub.user.email if sub.user else "",
             "email": sub.artist_email,
             "status": sub.status,
             "created_at": sub.created_at,
@@ -222,15 +238,26 @@ def render_admin_applications(session):
         st.info("No submissions match the filter.")
         return
 
-    selected = st.selectbox(
+    submissions_by_id = {sub.id: sub for sub in submissions}
+    selected_id = st.selectbox(
         "Select submission",
-        submissions,
-        format_func=lambda sub: f"{sub.id} - {sub.track_name}",
+        list(submissions_by_id),
+        format_func=lambda sub_id: f"{sub_id} - {submissions_by_id[sub_id].track_name}",
     )
+    selected = session.get(Submission, selected_id)
+    if not selected:
+        st.error("Submission not found.")
+        return
 
     st.subheader("Submission details")
     st.write(f"Track: {selected.track_name}")
     st.write(f"Artists: {selected.artists_display}")
+    if selected.user:
+        st.write(
+            f"Account: {selected.user.email} ({selected.user.display_name})"
+        )
+    else:
+        st.write(f"Account: (user_id={selected.user_id})")
     st.write(f"Email: {selected.artist_email}")
     st.write(f"Cover option: {selected.cover_option}")
     if selected.cover_option == "LINK":
@@ -332,11 +359,16 @@ def render_releases(session):
         st.info("No releases yet.")
         return
 
-    selected = st.selectbox(
+    releases_by_id = {rel.id: rel for rel in releases}
+    selected_id = st.selectbox(
         "Select release",
-        releases,
-        format_func=lambda rel: f"{rel.id} - {rel.submission.track_name}",
+        list(releases_by_id),
+        format_func=lambda rel_id: f"{rel_id} - {releases_by_id[rel_id].submission.track_name}",
     )
+    selected = session.get(Release, selected_id)
+    if not selected:
+        st.error("Release not found.")
+        return
     st.subheader("Release details")
     st.write(f"Submission ID: {selected.submission_id}")
     st.write(f"Track: {selected.submission.track_name}")

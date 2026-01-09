@@ -41,11 +41,16 @@ def render_artist_my_submissions(session):
     ]
     st.dataframe(rows, use_container_width=True)
 
-    selected = st.selectbox(
+    submissions_by_id = {sub.id: sub for sub in submissions}
+    selected_id = st.selectbox(
         "Select submission",
-        submissions,
-        format_func=lambda sub: f"{sub.id} - {sub.track_name}",
+        list(submissions_by_id),
+        format_func=lambda sub_id: f"{sub_id} - {submissions_by_id[sub_id].track_name}",
     )
+    selected = submissions_by_id.get(selected_id)
+    if not selected:
+        st.error("Submission not found.")
+        return
 
     status_params = {"page": "Artist Status", "token": selected.public_token}
     status_url = f"{APP_BASE_URL}?{urlencode(status_params)}"
