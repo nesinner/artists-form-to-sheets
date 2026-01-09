@@ -22,9 +22,12 @@ def render_artist_status(session, token_from_query):
         .options(selectinload(Submission.release))
         .filter_by(public_token=token)
     )
+    user_id = st.session_state.get("user_id")
+    if user_id and not st.session_state.get("user_is_admin"):
+        query = query.filter_by(user_id=user_id)
     submission = query.first()
     if not submission:
-        st.error("Submission not found.")
+        st.error("Submission not found or access denied.")
         return
 
     st.subheader(submission.track_name)
