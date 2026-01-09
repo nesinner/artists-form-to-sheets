@@ -1,5 +1,6 @@
 streamlit
 sqlalchemy
+psycopg2-binary
 pillow
 python-dotenv
 pytest

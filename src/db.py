@@ -46,7 +46,12 @@ def get_engine():
     connect_args = {}
     if DB_URL.startswith("sqlite"):
         connect_args = {"check_same_thread": False}
-    return create_engine(DB_URL, connect_args=connect_args)
+    engine_kwargs = {"connect_args": connect_args}
+    if not DB_URL.startswith("sqlite"):
+        # Keep stale connections from breaking after app sleep.
+        engine_kwargs["pool_pre_ping"] = True
+        engine_kwargs["pool_recycle"] = 1800
+    return create_engine(DB_URL, **engine_kwargs)
 
 
 @st.cache_resource
