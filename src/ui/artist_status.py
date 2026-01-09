@@ -3,29 +3,27 @@ from sqlalchemy.orm import selectinload
 
 from ..config import RELEASE_STATUS_COPY, STATUS_COPY
 from ..models import Submission
+from .common import rerun
 
 
 def render_artist_status(session, token_from_query):
     st.header("Artist Status")
-    token = st.text_input("Status token", value=token_from_query)
-    if not token.strip():
+    token = st.text_input("Status token", value=token_from_query).strip()
+    if not token:
         st.info("Enter your status token to see the latest update.")
         return
-    user_id = st.session_state.get("user_id")
-    if not user_id:
-        st.error("Please log in to view your status.")
-        return
+
+    if st.button("Refresh status"):
+        rerun()
 
     query = (
         session.query(Submission)
         .options(selectinload(Submission.release))
-        .filter_by(public_token=token.strip())
+        .filter_by(public_token=token)
     )
-    if not st.session_state.get("user_is_admin"):
-        query = query.filter_by(user_id=user_id)
     submission = query.first()
     if not submission:
-        st.error("Submission not found or access denied.")
+        st.error("Submission not found.")
         return
 
     st.subheader(submission.track_name)

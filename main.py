@@ -1,6 +1,7 @@
-﻿import streamlit as st
+﻿from urllib.parse import urlparse
+import streamlit as st
 
-from src.config import APP_TITLE
+from src.config import APP_TITLE, DB_URL
 from src.db import get_session
 from src.services.auth import ensure_admin_user
 from src.ui.admin_dashboard import (
@@ -28,6 +29,20 @@ def get_query_value(params, key):
     return value or ""
 
 
+def format_db_label(db_url):
+    if db_url.startswith("sqlite"):
+        return "SQLite (ephemeral)"
+    try:
+        parsed = urlparse(db_url)
+        host = parsed.hostname or ""
+        scheme = parsed.scheme or "db"
+        if host:
+            return f"{scheme}://{host}"
+        return scheme
+    except Exception:
+        return "Database"
+
+
 def main():
     st.set_page_config(page_title=APP_TITLE, layout="wide")
     st.title(APP_TITLE)
@@ -40,7 +55,10 @@ def main():
     try:
         ensure_admin_user(session, ADMIN_BOOTSTRAP_EMAIL, ADMIN_BOOTSTRAP_PASSWORD)
         if not st.session_state.get("user_id"):
-            render_auth(session)
+            if token_from_query or page_from_query == "Artist Status":
+                render_artist_status(session, token_from_query)
+            else:
+                render_auth(session)
             return
 
         pages = ["Artist Submit", "My Submissions", "Artist Status"]
@@ -54,6 +72,13 @@ def main():
 
         st.sidebar.subheader("Account")
         st.sidebar.write(st.session_state.get("user_email", ""))
+        if st.session_state.get("user_is_admin"):
+            if DB_URL.startswith("sqlite"):
+                st.sidebar.warning(
+                    "DB: SQLite (ephemeral). Configure Postgres in Secrets."
+                )
+            else:
+                st.sidebar.caption(f"DB: {format_db_label(DB_URL)}")
         if st.sidebar.button("Logout"):
             st.session_state.pop("user_id", None)
             st.session_state.pop("user_email", None)

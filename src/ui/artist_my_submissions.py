@@ -5,10 +5,13 @@ from sqlalchemy.orm import selectinload
 
 from ..config import APP_BASE_URL, RELEASE_STATUS_COPY, STATUS_COPY
 from ..models import Submission
+from .common import rerun
 
 
 def render_artist_my_submissions(session):
     st.header("My Submissions")
+    if st.button("Refresh list"):
+        rerun()
     user_id = st.session_state.get("user_id")
     if not user_id:
         st.error("Please log in to view your submissions.")
