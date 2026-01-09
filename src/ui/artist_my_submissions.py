@@ -10,6 +10,7 @@ from .common import rerun
 
 def render_artist_my_submissions(session):
     st.header("My Submissions")
+    session.expire_all()
     if st.button("Refresh list"):
         rerun()
     user_id = st.session_state.get("user_id")

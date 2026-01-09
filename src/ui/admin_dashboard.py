@@ -9,6 +9,7 @@ from ..config import RELEASE_STATUSES, SUBMISSION_STATUSES
 from ..models import PlannedCatalog, Release, Submission, utcnow
 from ..services.releases import create_planned_catalog, create_release
 from ..storage import render_download
+from .common import rerun
 
 
 def build_csv(rows, fieldnames):
@@ -176,6 +177,11 @@ def render_admin_applications(session):
     st.header("Admin Applications")
     if not admin_gate():
         return
+    session.expire_all()
+
+    flash = st.session_state.pop("admin_flash", None)
+    if flash:
+        st.success(flash)
 
     st.download_button(
         "Download Applications CSV",
@@ -274,13 +280,15 @@ def render_admin_applications(session):
         selected.admin_note = new_note.strip() if new_note else None
         selected.updated_at = utcnow()
         session.commit()
-        st.success("Submission updated.")
+        st.session_state["admin_flash"] = "Submission updated."
+        rerun()
 
     if selected.status == "OK":
         if st.button("Move to Releases"):
             _, created = create_release(session, selected.id)
             if created:
-                st.success("Release created.")
+                st.session_state["admin_flash"] = "Release created."
+                rerun()
             else:
                 st.info("Release already exists.")
 
@@ -289,6 +297,11 @@ def render_releases(session):
     st.header("Releases")
     if not admin_gate():
         return
+    session.expire_all()
+
+    flash = st.session_state.pop("release_flash", None)
+    if flash:
+        st.success(flash)
 
     st.download_button(
         "Download Releases CSV",
@@ -341,13 +354,15 @@ def render_releases(session):
         selected.release_note = release_note.strip() if release_note else None
         selected.updated_at = utcnow()
         session.commit()
-        st.success("Release updated.")
+        st.session_state["release_flash"] = "Release updated."
+        rerun()
 
     if selected.status == "APPROVED":
         if st.button("Move to Planned Catalog"):
             _, created = create_planned_catalog(session, selected.id)
             if created:
-                st.success("Planned catalog entry created.")
+                st.session_state["release_flash"] = "Planned catalog entry created."
+                rerun()
             else:
                 st.info("Planned catalog entry already exists.")
 
@@ -356,6 +371,7 @@ def render_planned_catalog(session):
     st.header("Planned Catalog")
     if not admin_gate():
         return
+    session.expire_all()
 
     st.download_button(
         "Download Planned Catalog CSV",

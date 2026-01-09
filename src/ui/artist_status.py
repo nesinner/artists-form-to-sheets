@@ -8,6 +8,7 @@ from .common import rerun
 
 def render_artist_status(session, token_from_query):
     st.header("Artist Status")
+    session.expire_all()
     token = st.text_input("Status token", value=token_from_query).strip()
     if not token:
         st.info("Enter your status token to see the latest update.")
