@@ -8,20 +8,20 @@ from .config import DB_URL
 from .models import Base
 
 
-def ensure_db_dir():
-    if not DB_URL.startswith("sqlite"):
+def ensure_db_dir(db_url):
+    if not db_url.startswith("sqlite"):
         return
-    if DB_URL.startswith("sqlite:////"):
-        db_path = "/" + DB_URL.replace("sqlite:////", "", 1)
-    elif DB_URL.startswith("sqlite:///"):
-        db_path = DB_URL.replace("sqlite:///", "", 1)
+    if db_url.startswith("sqlite:////"):
+        db_path = "/" + db_url.replace("sqlite:////", "", 1)
+    elif db_url.startswith("sqlite:///"):
+        db_path = db_url.replace("sqlite:///", "", 1)
     else:
         return
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
 
-def ensure_sqlite_columns(engine):
-    if not DB_URL.startswith("sqlite"):
+def ensure_sqlite_columns(engine, db_url):
+    if not db_url.startswith("sqlite"):
         return
     with engine.connect() as conn:
         result = conn.exec_driver_sql("PRAGMA table_info(submissions)")
@@ -41,26 +41,26 @@ def ensure_sqlite_columns(engine):
 
 
 @st.cache_resource
-def get_engine():
-    ensure_db_dir()
+def get_engine(db_url):
+    ensure_db_dir(db_url)
     connect_args = {}
-    if DB_URL.startswith("sqlite"):
+    if db_url.startswith("sqlite"):
         connect_args = {"check_same_thread": False}
     engine_kwargs = {"connect_args": connect_args}
-    if not DB_URL.startswith("sqlite"):
+    if not db_url.startswith("sqlite"):
         # Keep stale connections from breaking after app sleep.
         engine_kwargs["pool_pre_ping"] = True
         engine_kwargs["pool_recycle"] = 1800
-    return create_engine(DB_URL, **engine_kwargs)
+    return create_engine(db_url, **engine_kwargs)
 
 
 @st.cache_resource
-def get_session_factory():
-    engine = get_engine()
+def get_session_factory(db_url):
+    engine = get_engine(db_url)
     Base.metadata.create_all(engine)
-    ensure_sqlite_columns(engine)
+    ensure_sqlite_columns(engine, db_url)
     return sessionmaker(bind=engine)
 
 
 def get_session():
-    return get_session_factory()()
+    return get_session_factory(DB_URL)()
