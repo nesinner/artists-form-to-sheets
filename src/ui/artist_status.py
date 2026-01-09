@@ -1,6 +1,7 @@
 import streamlit as st
+from sqlalchemy.orm import selectinload
 
-from ..config import STATUS_COPY
+from ..config import RELEASE_STATUS_COPY, STATUS_COPY
 from ..models import Submission
 
 
@@ -15,7 +16,11 @@ def render_artist_status(session, token_from_query):
         st.error("Please log in to view your status.")
         return
 
-    query = session.query(Submission).filter_by(public_token=token.strip())
+    query = (
+        session.query(Submission)
+        .options(selectinload(Submission.release))
+        .filter_by(public_token=token.strip())
+    )
     if not st.session_state.get("user_is_admin"):
         query = query.filter_by(user_id=user_id)
     submission = query.first()
@@ -25,7 +30,13 @@ def render_artist_status(session, token_from_query):
 
     st.subheader(submission.track_name)
     st.write(f"Artists: {submission.artists_display}")
-    st.write(f"Status: {submission.status} - {STATUS_COPY.get(submission.status, '')}")
+    st.write(f"Submission status: {submission.status} - {STATUS_COPY.get(submission.status, '')}")
+    if submission.release:
+        st.write(
+            "Release status: "
+            f"{submission.release.status} - "
+            f"{RELEASE_STATUS_COPY.get(submission.release.status, '')}"
+        )
     if submission.admin_note:
         st.write("Admin note:")
         st.write(submission.admin_note)

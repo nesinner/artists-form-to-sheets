@@ -1,8 +1,9 @@
 from urllib.parse import urlencode
 
 import streamlit as st
+from sqlalchemy.orm import selectinload
 
-from ..config import APP_BASE_URL, STATUS_COPY
+from ..config import APP_BASE_URL, RELEASE_STATUS_COPY, STATUS_COPY
 from ..models import Submission
 
 
@@ -15,6 +16,7 @@ def render_artist_my_submissions(session):
 
     submissions = (
         session.query(Submission)
+        .options(selectinload(Submission.release))
         .filter_by(user_id=user_id)
         .order_by(Submission.created_at.desc())
         .all()
@@ -28,6 +30,7 @@ def render_artist_my_submissions(session):
             "id": sub.id,
             "track_name": sub.track_name,
             "status": sub.status,
+            "release_status": sub.release.status if sub.release else "",
             "updated_at": sub.updated_at,
         }
         for sub in submissions
@@ -46,8 +49,14 @@ def render_artist_my_submissions(session):
     st.subheader(selected.track_name)
     st.write(f"Artists: {selected.artists_display}")
     st.write(
-        f"Status: {selected.status} - {STATUS_COPY.get(selected.status, '')}"
+        f"Submission status: {selected.status} - {STATUS_COPY.get(selected.status, '')}"
     )
+    if selected.release:
+        st.write(
+            "Release status: "
+            f"{selected.release.status} - "
+            f"{RELEASE_STATUS_COPY.get(selected.release.status, '')}"
+        )
     if selected.admin_note:
         st.write("Admin note:")
         st.write(selected.admin_note)

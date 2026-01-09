@@ -22,6 +22,13 @@ STATUS_COPY = {
     "REJECTED": "Rejected",
 }
 
+RELEASE_STATUS_COPY = {
+    "IN_PREP": "In preparation",
+    "APPROVED": "Approved",
+    "SCHEDULED": "Scheduled",
+    "REJECTED": "Rejected",
+}
+
 DEFAULT_DB_URL = "sqlite:///data/app.db"
 
 
