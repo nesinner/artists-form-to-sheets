@@ -72,12 +72,13 @@ def main():
 
         st.sidebar.subheader("Account")
         st.sidebar.write(st.session_state.get("user_email", ""))
-        if DB_URL.startswith("sqlite"):
-            st.sidebar.warning(
-                "DB: SQLite (ephemeral). Configure Postgres in Secrets."
-            )
-        else:
-            st.sidebar.caption(f"DB: {format_db_label(DB_URL)}")
+        if st.session_state.get("user_is_admin"):
+            if DB_URL.startswith("sqlite"):
+                st.sidebar.warning(
+                    "DB: SQLite (ephemeral). Configure Postgres in Secrets."
+                )
+            else:
+                st.sidebar.caption(f"DB: {format_db_label(DB_URL)}")
         if st.sidebar.button("Logout"):
             st.session_state.pop("user_id", None)
             st.session_state.pop("user_email", None)
